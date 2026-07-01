@@ -364,7 +364,7 @@ select{background:var(--bg2);border:1px solid var(--border2);color:var(--text3);
 .table-wrap{overflow:auto;flex:1}
 table{width:100%;border-collapse:collapse;font-size:12px}
 thead{position:sticky;top:0;z-index:10}
-th{background:var(--bg2);color:var(--text2);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+th{background:var(--bg2);color:var(--text2);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:8px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;transition:color .15s}
 th:hover{color:var(--text3)}
 td{padding:7px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
 tr:hover td{background:var(--bg2);cursor:pointer}
@@ -477,27 +477,52 @@ td.mono{font-family:var(--mono)}
         <option value="exited">Fully Exited</option>
       </select>
       <select id="srt" onchange="loadHolders()">
-        <option value="totalPnL">Sort: Total PnL</option>
-        <option value="realizedPnL">Realized PnL</option>
-        <option value="unrealizedPnL">Unrealized PnL</option>
-        <option value="balance">Balance</option>
-        <option value="currentValueUSD">Value USD</option>
-        <option value="holdingSecs">Hold Duration</option>
-        <option value="txCount">Tx Count</option>
+        <optgroup label="── PnL ──">
+          <option value="totalPnL">Total PnL</option>
+          <option value="realizedPnL">Realized PnL</option>
+          <option value="unrealizedPnL">Unrealized PnL</option>
+        </optgroup>
+        <optgroup label="── Position ──">
+          <option value="balance">IXS Balance</option>
+          <option value="currentValueUSD">Value USD</option>
+          <option value="avgCost">Avg Cost Basis</option>
+          <option value="sharePercent">Supply %</option>
+        </optgroup>
+        <optgroup label="── Time ──">
+          <option value="firstBuyTs">First Buy Date</option>
+          <option value="lastActivityTs">Last Active</option>
+          <option value="holdingSecs">Hold Duration</option>
+        </optgroup>
+        <optgroup label="── Activity ──">
+          <option value="txCount">Tx Count</option>
+          <option value="qtyBought">Total Bought</option>
+          <option value="qtySold">Total Sold</option>
+          <option value="totalSpentUSD">Total Spent USD</option>
+          <option value="totalSoldUSD">Total Received USD</option>
+        </optgroup>
       </select>
       <select id="ord" onchange="loadHolders()">
-        <option value="desc">Descending</option>
-        <option value="asc">Ascending</option>
+        <option value="desc">↓ Biggest first</option>
+        <option value="asc">↑ Smallest first</option>
       </select>
       <span class="row-count" id="rc"></span>
     </div>
     <div class="table-wrap">
       <table>
         <thead><tr>
-          <th>#</th><th>Address</th><th>Balance</th><th>Supply%</th>
-          <th>Value USD</th><th>Avg Cost</th><th>Realized PnL</th>
-          <th>Unrealized PnL</th><th>Total PnL</th>
-          <th>First Buy</th><th>Holding</th><th>Last Active</th><th>Txs</th>
+          <th onclick="sortBy('rank')"># <span id="sort-rank"></span></th>
+          <th>Address</th>
+          <th onclick="sortBy('balance')">Balance <span id="sort-balance"></span></th>
+          <th onclick="sortBy('sharePercent')">Supply% <span id="sort-sharePercent"></span></th>
+          <th onclick="sortBy('currentValueUSD')">Value USD <span id="sort-currentValueUSD"></span></th>
+          <th onclick="sortBy('avgCost')">Avg Cost <span id="sort-avgCost"></span></th>
+          <th onclick="sortBy('realizedPnL')">Realized PnL <span id="sort-realizedPnL"></span></th>
+          <th onclick="sortBy('unrealizedPnL')">Unrealized PnL <span id="sort-unrealizedPnL"></span></th>
+          <th onclick="sortBy('totalPnL')">Total PnL <span id="sort-totalPnL"></span></th>
+          <th onclick="sortBy('firstBuyTs')">First Buy <span id="sort-firstBuyTs"></span></th>
+          <th onclick="sortBy('holdingSecs')">Holding <span id="sort-holdingSecs"></span></th>
+          <th onclick="sortBy('lastActivityTs')">Last Active <span id="sort-lastActivityTs"></span></th>
+          <th onclick="sortBy('txCount')">Txs <span id="sort-txCount"></span></th>
         </tr></thead>
         <tbody id="htbody"></tbody>
       </table>
@@ -562,6 +587,21 @@ function bar(n,max){
 }
 
 function debounce(fn,d){return function(){clearTimeout(_dt[fn]);_dt[fn]=setTimeout(fn,d)}}
+
+function sortBy(col){
+  const srt=$('srt'), ord=$('ord');
+  if(srt.value===col){
+    ord.value=ord.value==='desc'?'asc':'desc';
+  } else {
+    srt.value=col;
+    ord.value='desc';
+  }
+  // Update all header indicators
+  document.querySelectorAll('th span[id^="sort-"]').forEach(s=>s.textContent='');
+  const ind=document.getElementById('sort-'+col);
+  if(ind) ind.textContent=ord.value==='desc'?' ↓':' ↑';
+  loadHolders();
+}
 
 async function api(url){const r=await fetch(url);if(!r.ok)throw new Error(await r.text());return r.json()}
 
