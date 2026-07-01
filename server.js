@@ -198,16 +198,16 @@ async function runAnalysis() {
           const ops = await fetchHistory(h.address);
           const pnl = computePnL(h.address, ops, currentPx, priceMap);
           return {
-            address: h.address, balance: parseFloat(h.balance),
+            address: h.address, balance: parseFloat(h.balance) / 1e18,
             sharePercent: parseFloat(h.share),
-            currentValueUSD: parseFloat(h.balance) * currentPx,
+            currentValueUSD: (parseFloat(h.balance) / 1e18) * currentPx,
             ...pnl,
           };
         } catch (e) {
           return {
-            address: h.address, balance: parseFloat(h.balance),
+            address: h.address, balance: parseFloat(h.balance) / 1e18,
             sharePercent: parseFloat(h.share),
-            currentValueUSD: parseFloat(h.balance) * currentPx,
+            currentValueUSD: (parseFloat(h.balance) / 1e18) * currentPx,
             realizedPnL: 0, unrealizedPnL: 0, totalPnL: 0,
             remainingQty: 0, avgCost: 0, qtyBought: 0, qtySold: 0,
             totalSpentUSD: 0, totalSoldUSD: 0, firstBuyTs: null,
@@ -263,7 +263,7 @@ app.get('/api/summary', (req, res) => {
 app.get('/api/holders', (req, res) => {
   if (!cache.data) return res.status(503).json({ error: 'Not ready' });
   let rows = cache.data.results;
-  const { search, filter, sort = 'totalPnL', order = 'desc', page = 1, limit = 50 } = req.query;
+  const { search, filter, sort = 'balance', order = 'desc', page = 1, limit = 50 } = req.query;
   if (search) rows = rows.filter(r => r.address.toLowerCase().includes(search.toLowerCase()));
   if (filter === 'profitable') rows = rows.filter(r => r.totalPnL > 0);
   if (filter === 'loss')       rows = rows.filter(r => r.totalPnL < 0);
@@ -478,6 +478,7 @@ td.mono{font-family:var(--mono)}
       </select>
       <select id="srt" onchange="loadHolders()">
         <optgroup label="── PnL ──">
+          <option value="balance">IXS Balance</option>
           <option value="totalPnL">Total PnL</option>
           <option value="realizedPnL">Realized PnL</option>
           <option value="unrealizedPnL">Unrealized PnL</option>
