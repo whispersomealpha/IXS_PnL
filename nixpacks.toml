@@ -1,8 +1,8 @@
-[phases.install]
-cmds = ["npm ci"]
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm-9_x"]
 
-[phases.build]
-cmds = ["echo done"]
+[phases.install]
+cmds = ["npm install"]
 
 [start]
 cmd = "node server.js"
