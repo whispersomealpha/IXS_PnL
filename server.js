@@ -221,7 +221,7 @@ async function runAnalysis() {
       if (i + CONCURRENCY < total) await sleep(DELAY_MS);
     }
 
-    results.sort((a, b) => b.totalPnL - a.totalPnL);
+    results.sort((a, b) => b.balance - a.balance);
     results.forEach((r, i) => { r.rank = i + 1; });
     cache.data = { results, currentPx, updatedAt: new Date().toISOString() };
     cache.status = 'ready'; cache.completedAt = new Date().toISOString();
