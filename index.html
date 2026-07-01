@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IXS Tracker · Holder Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & tokens ────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg0      : #080b0f;
+  --bg1      : #0e1318;
+  --bg2      : #141c24;
+  --bg3      : #1c2730;
+  --border   : #1f2d3a;
+  --border2  : #2a3d4f;
+  --text      : #d4e4f0;
+  --text2     : #5d7a8a;
+  --text3     : #8fa8b8;
+  --pos       : #00e5a0;
+  --pos-dim   : #00e5a020;
+  --neg       : #ff4e6a;
+  --neg-dim   : #ff4e6a20;
+  --accent    : #2196f3;
+  --accent2   : #0d6efd;
+  --warn      : #ffc107;
+  --mono      : 'IBM Plex Mono', monospace;
+  --sans      : 'Inter', sans-serif;
+  --radius    : 6px;
+  --glow-pos  : 0 0 12px #00e5a030;
+  --glow-neg  : 0 0 12px #ff4e6a30;
+}
+
+body {
+  background: var(--bg0);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Layout ──────────────────────────────────────────────────── */
+.shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── Header ──────────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 52px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: .02em;
+}
+
+.logo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--pos);
+  box-shadow: var(--glow-pos);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .4; }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.price-badge {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.price-badge span {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.status-pill {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+}
+
+.status-pill.running { color: var(--warn); border-color: var(--warn); animation: blink 1s infinite; }
+.status-pill.ready   { color: var(--pos);  border-color: var(--pos); }
+.status-pill.error   { color: var(--neg);  border-color: var(--neg); }
+
+@keyframes blink { 50% { opacity: .5; } }
+
+.btn-refresh {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s;
+}
+.btn-refresh:hover { border-color: var(--accent); color: var(--text); }
+
+/* ── Stats bar ───────────────────────────────────────────────── */
+.stats-bar {
+  display: flex;
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.stat {
+  flex: 1;
+  background: var(--bg1);
+  padding: 14px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.stat-value.pos { color: var(--pos); text-shadow: var(--glow-pos); }
+.stat-value.neg { color: var(--neg); text-shadow: var(--glow-neg); }
+
+.stat-sub {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+/* ── Tabs ────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+  padding: 0 24px;
+}
+
+.tab {
+  padding: 12px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+  user-select: none;
+}
+
+.tab:hover { color: var(--text3); }
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Content panels ──────────────────────────────────────────── */
+.panel { display: none; flex: 1; }
+.panel.active { display: flex; flex-direction: column; }
+
+/* ── Controls ────────────────────────────────────────────────── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 0 0 260px;
+}
+
+.search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text2);
+  pointer-events: none;
+}
+
+input[type=text] {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 10px 6px 32px;
+  border-radius: var(--radius);
+  outline: none;
+  transition: border-color .15s;
+}
+
+input[type=text]:focus { border-color: var(--accent); }
+input[type=text]::placeholder { color: var(--text2); }
+
+select {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  outline: none;
+  cursor: pointer;
+}
+
+select:focus { border-color: var(--accent); }
+
+.controls-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.row-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+/* ── Table ───────────────────────────────────────────────────── */
+.table-wrap {
+  overflow: auto;
+  flex: 1;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+th {
+  background: var(--bg2);
+  color: var(--text2);
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 8px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+}
+
+th:hover { color: var(--text3); }
+th.sorted { color: var(--accent); }
+th.sorted::after { content: ' ↓'; }
+th.sorted.asc::after { content: ' ↑'; }
+
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+tr:hover td { background: var(--bg2); }
+
+td.pos { color: var(--pos); font-family: var(--mono); }
+td.neg { color: var(--neg); font-family: var(--mono); }
+td.neu { color: var(--text2); font-family: var(--mono); }
+td.mono { font-family: var(--mono); }
+
+.addr-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.addr-link {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.addr-link:hover { text-decoration: underline; }
+
+.flag-badge {
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  opacity: .8;
+}
+
+/* PnL bars */
+.pnl-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pnl-bar {
+  height: 4px;
+  border-radius: 2px;
+  min-width: 2px;
+  max-width: 80px;
+}
+
+.pnl-bar.pos { background: var(--pos); box-shadow: var(--glow-pos); }
+.pnl-bar.neg { background: var(--neg); box-shadow: var(--glow-neg); }
+
+/* Hold duration */
+.hold-chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text3);
+}
+
+/* ── Pagination ──────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg1);
+}
+
+.page-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.page-btn:hover { border-color: var(--accent); color: var(--text); }
+.page-btn.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+.page-btn:disabled { opacity: .35; cursor: default; }
+
+.page-info {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+/* ── Activity window tabs ────────────────────────────────────── */
+.window-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg1);
+  align-items: center;
+}
+
+.win-tab {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.win-tab:hover { border-color: var(--accent); color: var(--text3); }
+.win-tab.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+.type-filter {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.type-btn {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.type-btn.buy.active  { background: var(--pos-dim); border-color: var(--pos); color: var(--pos); }
+.type-btn.sell.active { background: var(--neg-dim); border-color: var(--neg); color: var(--neg); }
+.type-btn.all.active  { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+
+/* ── Loading overlay ─────────────────────────────────────────── */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  gap: 20px;
+}
+
+#loading-overlay.hidden { display: none; }
+
+.loading-logo {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--text);
+}
+
+.progress-track {
+  width: 320px;
+  height: 3px;
+  background: var(--bg3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--pos);
+  border-radius: 2px;
+  box-shadow: var(--glow-pos);
+  transition: width .3s;
+}
+
+.loading-status {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* ── Wallet detail modal ─────────────────────────────────────── */
+#modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+#modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--bg1);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  width: 780px;
+  max-width: 95vw;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-close:hover { color: var(--text); }
+
+.modal-body { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+.modal-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.mstat {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.mstat-label { font-size: 10px; color: var(--text2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+.mstat-value { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+
+.trades-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 8px;
+}
+
+.trade-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.trade-type {
+  width: 36px;
+  padding: 2px 0;
+  text-align: center;
+  border-radius: 3px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.trade-type.BUY  { color: var(--pos); border: 1px solid var(--pos); }
+.trade-type.SELL { color: var(--neg); border: 1px solid var(--neg); }
+
+/* ── Scrollbar ───────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg0); }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border2); }
+
+/* ── Empty / error states ────────────────────────────────────── */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text2);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+<div id="loading-overlay">
+  <div class="loading-logo">IXS TRACKER</div>
+  <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  <div class="loading-status" id="loading-msg">Initializing analysis…</div>
+</div>
+
+<div id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-addr">—</div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="shell">
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      IXS TRACKER
+    </div>
+    <div class="header-right">
+      <div class="price-badge">IXS/USD <span id="hdr-price">—</span></div>
+      <div class="status-pill" id="status-pill">—</div>
+      <div class="price-badge" id="hdr-updated" style="font-size:10px;color:var(--text2)"></div>
+      <button class="btn-refresh" onclick="triggerRefresh()">↺ Refresh</button>
+    </div>
+  </header>
+
+  <!-- Stats bar -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat"><div class="stat-label">Wallets</div><div class="stat-value" id="s-wallets">—</div></div>
+    <div class="stat"><div class="stat-label">Profitable</div><div class="stat-value pos" id="s-prof">—</div><div class="stat-sub" id="s-prof-pct"></div></div>
+    <div class="stat"><div class="stat-label">In Loss</div><div class="stat-value neg" id="s-loss">—</div><div class="stat-sub" id="s-loss-pct"></div></div>
+    <div class="stat"><div class="stat-label">Still Holding</div><div class="stat-value" id="s-holding">—</div></div>
+    <div class="stat"><div class="stat-label">Total Realized PnL</div><div class="stat-value" id="s-real">—</div></div>
+    <div class="stat"><div class="stat-label">Total Unrealized PnL</div><div class="stat-value" id="s-unreal">—</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('holders', this)">Holders &amp; PnL</div>
+    <div class="tab" onclick="switchTab('activity', this)">Activity Feed</div>
+  </div>
+
+  <!-- Holders panel -->
+  <div class="panel active" id="panel-holders">
+    <div class="controls">
+      <div class="search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="search-input" placeholder="Search address…" oninput="debounce(loadHolders, 400)()">
+      </div>
+      <select id="filter-sel" onchange="loadHolders()">
+        <option value="">All wallets</option>
+        <option value="profitable">Profitable</option>
+        <option value="loss">In Loss</option>
+        <option value="holding">Still Holding</option>
+        <option value="exited">Fully Exited</option>
+      </select>
+      <select id="sort-sel" onchange="loadHolders()">
+        <option value="totalPnL">Sort: Total PnL</option>
+        <option value="realizedPnL">Sort: Realized PnL</option>
+        <option value="unrealizedPnL">Sort: Unrealized PnL</option>
+        <option value="balance">Sort: Balance</option>
+        <option value="currentValueUSD">Sort: Value USD</option>
+        <option value="holdingSecs">Sort: Hold Duration</option>
+        <option value="txCount">Sort: Tx Count</option>
+        <option value="firstBuyTs">Sort: First Buy</option>
+      </select>
+      <select id="order-sel" onchange="loadHolders()">
+        <option value="desc">Descending</option>
+        <option value="asc">Ascending</option>
+      </select>
+      <div class="controls-right">
+        <span class="row-count" id="row-count"></span>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Address</th>
+            <th>IXS Balance</th>
+            <th>Supply %</th>
+            <th>Value USD</th>
+            <th>Avg Cost</th>
+            <th>Realized PnL</th>
+            <th>Unrealized PnL</th>
+            <th>Total PnL</th>
+            <th>Holding Since</th>
+            <th>Hold Duration</th>
+            <th>Last Active</th>
+            <th>Txs</th>
+          </tr>
+        </thead>
+        <tbody id="holders-body"></tbody>
+      </table>
+    </div>
+
+    <div class="pagination" id="holders-pagination"></div>
+  </div>
+
+  <!-- Activity panel -->
+  <div class="panel" id="panel-activity">
+    <div class="window-tabs">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--text2);margin-right:4px">Window:</span>
+      <div class="win-tab active" onclick="setWindow('1H', this)">1H</div>
+      <div class="win-tab" onclick="setWindow('6H', this)">6H</div>
+      <div class="win-tab" onclick="setWindow('24H', this)">24H</div>
+      <div class="win-tab" onclick="setWindow('1W', this)">1W</div>
+      <div class="win-tab" onclick="setWindow('1M', this)">1M</div>
+      <div class="type-filter">
+        <div class="type-btn all active" onclick="setType('', this)">All</div>
+        <div class="type-btn buy" onclick="setType('BUY', this)">Buys</div>
+        <div class="type-btn sell" onclick="setType('SELL', this)">Sells</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Address</th>
+            <th>Balance</th>
+            <th>Total PnL</th>
+            <th>Buys</th>
+            <th>Sells</th>
+            <th>Buy Vol USD</th>
+            <th>Sell Vol USD</th>
+            <th>Net Flow USD</th>
+            <th>Last Tx</th>
+          </tr>
+        </thead>
+        <tbody id="activity-body"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="activity-empty" style="display:none">No activity in this window</div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let state = {
+  ready    : false,
+  page     : 1,
+  limit    : 50,
+  actWindow: '1H',
+  actType  : '',
+  pollTimer: null,
+};
+
+// ── Utils ──────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function fmtUSD(n, always=false) {
+  if (n == null || isNaN(n)) return '—';
+  const abs = Math.abs(n);
+  let s;
+  if (abs >= 1e6)      s = (abs/1e6).toFixed(2) + 'M';
+  else if (abs >= 1e3) s = (abs/1e3).toFixed(1) + 'K';
+  else                 s = abs.toFixed(2);
+  return (n >= 0 ? (always?'+':'') : '−') + '$' + s;
+}
+
+function fmtNum(n) {
+  if (n == null) return '—';
+  if (n >= 1e6)  return (n/1e6).toFixed(2)+'M';
+  if (n >= 1e3)  return (n/1e3).toFixed(1)+'K';
+  return n.toLocaleString('en-US', {maximumFractionDigits:2});
+}
+
+function fmtAddr(a) {
+  return a.slice(0,6)+'…'+a.slice(-4);
+}
+
+function fmtTs(ts) {
+  if (!ts) return '—';
+  return new Date(ts*1000).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+}
+
+function fmtDuration(secs) {
+  if (!secs || secs < 60) return '—';
+  const d = Math.floor(secs/86400);
+  const h = Math.floor((secs%86400)/3600);
+  if (d >= 365) return Math.floor(d/365)+'y '+Math.floor((d%365)/30)+'m';
+  if (d >= 30)  return Math.floor(d/30)+'mo '+d%30+'d';
+  if (d >= 1)   return d+'d '+h+'h';
+  return h+'h';
+}
+
+function pnlClass(n) {
+  if (n > 0) return 'pos';
+  if (n < 0) return 'neg';
+  return 'neu';
+}
+
+function pnlBarHTML(n, max) {
+  if (n == null || max === 0) return '—';
+  const pct = Math.min(Math.abs(n)/max*100, 100);
+  const cls = n >= 0 ? 'pos' : 'neg';
+  const txt = fmtUSD(n, true);
+  return `<div class="pnl-bar-wrap">
+    <div class="pnl-bar ${cls}" style="width:${pct.toFixed(1)}px"></div>
+    <span class="${cls}">${txt}</span>
+  </div>`;
+}
+
+let _debounceTimers = {};
+function debounce(fn, delay) {
+  return function(...args) {
+    const key = fn.toString().slice(0,20);
+    clearTimeout(_debounceTimers[key]);
+    _debounceTimers[key] = setTimeout(() => fn(...args), delay);
+  };
+}
+
+// ── API calls ──────────────────────────────────────────────────
+async function api(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ── Poll status until ready ────────────────────────────────────
+async function pollStatus() {
+  try {
+    const s = await api('/api/status');
+    const pill = $('status-pill');
+    pill.textContent = s.status;
+    pill.className   = 'status-pill ' + s.status;
+
+    if (s.status === 'running') {
+      const pct = s.progress.total > 0
+        ? Math.round(s.progress.done / s.progress.total * 100) : 0;
+      $('prog-fill').style.width = pct + '%';
+      $('loading-msg').textContent =
+        s.progress.total > 0
+          ? `Analyzing wallets… ${s.progress.done} / ${s.progress.total} (${pct}%)`
+          : 'Fetching holders & price data…';
+      setTimeout(pollStatus, 2000);
+      return;
+    }
+
+    if (s.status === 'ready') {
+      $('loading-overlay').classList.add('hidden');
+      state.ready = true;
+      if (s.currentPx) $('hdr-price').textContent = '$' + s.currentPx.toFixed(4);
+      if (s.updatedAt) $('hdr-updated').textContent =
+        'Updated ' + new Date(s.updatedAt).toLocaleTimeString();
+      loadSummary();
+      loadHolders();
+      return;
+    }
+
+    if (s.status === 'error') {
+      $('loading-msg').textContent = 'Error: ' + s.error + ' — retrying in 30s';
+      setTimeout(pollStatus, 30000);
+      return;
+    }
+
+    // idle — wait
+    setTimeout(pollStatus, 3000);
+  } catch(e) {
+    $('loading-msg').textContent = 'Connection error — retrying…';
+    setTimeout(pollStatus, 5000);
+  }
+}
+
+async function triggerRefresh() {
+  await fetch('/api/refresh', { method: 'POST' });
+  state.ready = false;
+  $('loading-overlay').classList.remove('hidden');
+  $('prog-fill').style.width = '0%';
+  $('loading-msg').textContent = 'Starting refresh…';
+  pollStatus();
+}
+
+// ── Summary ────────────────────────────────────────────────────
+async function loadSummary() {
+  const d = await api('/api/summary');
+  $('s-wallets').textContent  = d.totalWallets.toLocaleString();
+  $('s-prof').textContent     = d.profitable.toLocaleString();
+  $('s-prof-pct').textContent = Math.round(d.profitable/d.totalWallets*100)+'% of holders';
+  $('s-loss').textContent     = d.inLoss.toLocaleString();
+  $('s-loss-pct').textContent = Math.round(d.inLoss/d.totalWallets*100)+'% of holders';
+  $('s-holding').textContent  = d.holding.toLocaleString();
+
+  const rEl = $('s-real');
+  rEl.textContent  = fmtUSD(d.totalRealizedPnL, true);
+  rEl.className    = 'stat-value ' + pnlClass(d.totalRealizedPnL);
+
+  const uEl = $('s-unreal');
+  uEl.textContent  = fmtUSD(d.totalUnrealizedPnL, true);
+  uEl.className    = 'stat-value ' + pnlClass(d.totalUnrealizedPnL);
+
+  if (d.currentPx) $('hdr-price').textContent = '$' + d.currentPx.toFixed(4);
+}
+
+// ── Holders table ──────────────────────────────────────────────
+let _maxAbsPnL = 1;
+
+async function loadHolders(resetPage = true) {
+  if (!state.ready) return;
+  if (resetPage) state.page = 1;
+
+  const search = $('search-input').value;
+  const filter = $('filter-sel').value;
+  const sort   = $('sort-sel').value;
+  const order  = $('order-sel').value;
+
+  const url = `/api/holders?page=${state.page}&limit=${state.limit}` +
+    `&search=${encodeURIComponent(search)}&filter=${filter}` +
+    `&sort=${sort}&order=${order}`;
+
+  const data = await api(url);
+  _maxAbsPnL = data.rows.reduce((m, r) => Math.max(m, Math.abs(r.totalPnL||0)), 1);
+
+  $('row-count').textContent = `${data.total.toLocaleString()} wallets`;
+
+  const tbody = $('holders-body');
+  tbody.innerHTML = data.rows.map(r => {
+    const pc = pnlClass(r.totalPnL);
+    const truncBadge = r.truncated ? '<span class="flag-badge">TRUNC</span>' : '';
+    const errBadge   = r.error    ? '<span class="flag-badge" style="border-color:var(--neg);color:var(--neg)">ERR</span>' : '';
+
+    return `<tr onclick="openWallet('${r.address}')" style="cursor:pointer">
+      <td class="mono" style="color:var(--text2)">${r.rank}</td>
+      <td>
+        <div class="addr-cell">
+          <a class="addr-link" href="https://etherscan.io/address/${r.address}" target="_blank" onclick="event.stopPropagation()">${fmtAddr(r.address)}</a>
+          ${truncBadge}${errBadge}
+        </div>
+      </td>
+      <td class="mono">${fmtNum(r.balance)}</td>
+      <td class="mono" style="color:var(--text2)">${r.sharePercent?.toFixed(2)}%</td>
+      <td class="mono">${fmtUSD(r.currentValueUSD)}</td>
+      <td class="mono" style="color:var(--text2)">${r.avgCost ? '$'+r.avgCost.toFixed(4) : '—'}</td>
+      <td>${pnlBarHTML(r.realizedPnL, _maxAbsPnL)}</td>
+      <td>${pnlBarHTML(r.unrealizedPnL, _maxAbsPnL)}</td>
+      <td>${pnlBarHTML(r.totalPnL, _maxAbsPnL)}</td>
+      <td class="mono" style="color:var(--text2)">${fmtTs(r.firstBuyTs)}</td>
+      <td><span class="hold-chip">${fmtDuration(r.holdingSecs)}</span></td>
+      <td class="mono" style="color:var(--text2)">${fmtTs(r.lastActivityTs)}</td>
+      <td class="mono" style="color:var(--text2)">${r.txCount ?? '—'}</td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(data.page, data.pages, data.total);
+}
+
+function renderPagination(page, pages, total) {
+  const el = $('holders-pagination');
+  if (pages <= 1) { el.innerHTML = ''; return; }
+
+  let html = `<button class="page-btn" onclick="goPage(${page-1})" ${page<=1?'disabled':''}>‹ Prev</button>`;
+
+  // show up to 7 page buttons
+  const start = Math.max(1, page - 3);
+  const end   = Math.min(pages, page + 3);
+  if (start > 1) html += `<button class="page-btn" onclick="goPage(1)">1</button><span class="page-info">…</span>`;
+  for (let p = start; p <= end; p++) {
+    html += `<button class="page-btn ${p===page?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  if (end < pages) html += `<span class="page-info">…</span><button class="page-btn" onclick="goPage(${pages})">${pages}</button>`;
+
+  html += `<button class="page-btn" onclick="goPage(${page+1})" ${page>=pages?'disabled':''}>Next ›</button>`;
+  html += `<span class="page-info">${total.toLocaleString()} total</span>`;
+  el.innerHTML = html;
+}
+
+function goPage(p) {
+  state.page = p;
+  loadHolders(false);
+}
+
+// ── Activity feed ──────────────────────────────────────────────
+function setWindow(w, el) {
+  state.actWindow = w;
+  document.querySelectorAll('.win-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadActivity();
+}
+
+function setType(t, el) {
+  state.actType = t;
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  loadActivity();
+}
+
+async function loadActivity() {
+  if (!state.ready) return;
+  const url = `/api/activity?window=${state.actWindow}&type=${state.actType}`;
+  const data = await api(url);
+
+  const empty = $('activity-empty');
+  const tbody = $('activity-body');
+
+  if (!data.rows.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'flex';
+    return;
+  }
+
+  empty.style.display = 'none';
+  tbody.innerHTML = data.rows.map(r => {
+    const netCls = r.netFlow >= 0 ? 'pos' : 'neg';
+    const pCls   = pnlClass(r.totalPnL);
+    return `<tr onclick="openWallet('${r.address}')" style="cursor:pointer">
+      <td>
+        <a class="addr-link" href="https://etherscan.io/address/${r.address}" target="_blank" onclick="event.stopPropagation()">${fmtAddr(r.address)}</a>
+      </td>
+      <td class="mono">${fmtNum(r.balance)}</td>
+      <td class="${pCls} mono">${fmtUSD(r.totalPnL, true)}</td>
+      <td style="color:var(--pos);font-family:var(--mono)">${r.buys}</td>
+      <td style="color:var(--neg);font-family:var(--mono)">${r.sells}</td>
+      <td style="color:var(--pos);font-family:var(--mono)">${fmtUSD(r.buyVol)}</td>
+      <td style="color:var(--neg);font-family:var(--mono)">${fmtUSD(r.sellVol)}</td>
+      <td class="${netCls} mono">${fmtUSD(r.netFlow, true)}</td>
+      <td class="mono" style="color:var(--text2)">${fmtTs(r.lastTs)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Wallet detail modal ────────────────────────────────────────
+async function openWallet(address) {
+  const overlay = $('modal-overlay');
+  overlay.classList.add('open');
+  $('modal-addr').textContent = address;
+  $('modal-body').innerHTML = '<div style="color:var(--text2);font-family:var(--mono);font-size:12px;padding:20px">Loading…</div>';
+
+  try {
+    const w = await api(`/api/wallet/${address}`);
+    const pc = pnlClass(w.totalPnL);
+
+    const statsHTML = `
+      <div class="modal-stats">
+        <div class="mstat">
+          <div class="mstat-label">Balance</div>
+          <div class="mstat-value">${fmtNum(w.balance)} IXS</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Current Value</div>
+          <div class="mstat-value">${fmtUSD(w.currentValueUSD)}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Avg Cost Basis</div>
+          <div class="mstat-value">${w.avgCost ? '$'+w.avgCost.toFixed(4) : '—'}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Hold Duration</div>
+          <div class="mstat-value">${fmtDuration(w.holdingSecs)}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Realized PnL</div>
+          <div class="mstat-value ${pnlClass(w.realizedPnL)}">${fmtUSD(w.realizedPnL, true)}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Unrealized PnL</div>
+          <div class="mstat-value ${pnlClass(w.unrealizedPnL)}">${fmtUSD(w.unrealizedPnL, true)}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Total PnL</div>
+          <div class="mstat-value ${pc}">${fmtUSD(w.totalPnL, true)}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Total Txs</div>
+          <div class="mstat-value">${w.txCount}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">First Buy</div>
+          <div class="mstat-value" style="font-size:13px">${fmtTs(w.firstBuyTs)}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Last Active</div>
+          <div class="mstat-value" style="font-size:13px">${fmtTs(w.lastActivityTs)}</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Total Bought</div>
+          <div class="mstat-value" style="font-size:13px">${fmtNum(w.qtyBought)} IXS</div>
+        </div>
+        <div class="mstat">
+          <div class="mstat-label">Total Sold</div>
+          <div class="mstat-value" style="font-size:13px">${fmtNum(w.qtySold)} IXS</div>
+        </div>
+      </div>`;
+
+    const trades = (w.trades || []).slice().reverse();
+    const tradesHTML = trades.length ? `
+      <div>
+        <div class="trades-title">Recent Transfers (last 50)</div>
+        ${trades.map(t => `
+          <div class="trade-row">
+            <span class="trade-type ${t.type}">${t.type}</span>
+            <span style="flex:1;color:var(--text)">${fmtNum(t.qty)} IXS</span>
+            <span>${t.priceUSD ? '@$'+t.priceUSD.toFixed(4) : '—'}</span>
+            <span style="color:${t.type==='BUY'?'var(--pos)':'var(--neg)'}">
+              ${t.valueUSD ? fmtUSD(t.valueUSD) : '—'}
+            </span>
+            <span style="margin-left:auto">${fmtTs(t.ts)}</span>
+          </div>
+        `).join('')}
+      </div>` : '';
+
+    $('modal-body').innerHTML = statsHTML + tradesHTML;
+  } catch(e) {
+    $('modal-body').innerHTML = `<div style="color:var(--neg);font-family:var(--mono);font-size:12px">Error: ${e.message}</div>`;
+  }
+}
+
+function closeModal() {
+  $('modal-overlay').classList.remove('open');
+}
+
+$('modal-overlay').addEventListener('click', e => {
+  if (e.target === $('modal-overlay')) closeModal();
+});
+
+// ── Tab switching ──────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  $('panel-' + name).classList.add('active');
+  if (name === 'activity') loadActivity();
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+pollStatus();
+</script>
+</body>
+</html>
