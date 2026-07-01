@@ -54,33 +54,27 @@ async function getCurrentPrice() {
 async function getPriceMap() {
   if (_priceMap && Date.now() - _priceAt < 3_600_000) return _priceMap;
   _priceMap = new Map();
-  // Try CoinGecko public endpoint (no key needed for this call)
-  try {
-    const { data } = await axios.get(
-      'https://api.coingecko.com/api/v3/coins/ix-swap/market_chart?vs_currency=usd&days=365&interval=daily&x_cg_demo_api_key=' + CG_KEY,
-      { timeout: 30000, headers: { 'Accept': 'application/json', 'x-cg-demo-api-key': CG_KEY, 'x-cg-pro-api-key': CG_KEY } }
-    );
-    for (const [ts, px] of (data.prices || [])) {
-      _priceMap.set(new Date(ts).toISOString().slice(0, 10), px);
-    }
-    console.log('[IXS] Price map loaded from CoinGecko:', _priceMap.size, 'days');
-  } catch (e) {
-    console.warn('[IXS] CoinGecko price history failed:', e.message);
-    // Fallback: use Ethplorer token info for at least the current price
+  // Try CoinGecko with demo key
+  const cgUrls = [
+    'https://pro-api.coingecko.com/api/v3/coins/ix-swap/market_chart?vs_currency=usd&days=365&interval=daily',
+    'https://api.coingecko.com/api/v3/coins/ix-swap/market_chart?vs_currency=usd&days=365&interval=daily',
+  ];
+  for (const url of cgUrls) {
     try {
-      const { data } = await axios.get(
-        'https://api.ethplorer.io/getTokenInfo/' + TOKEN_ADDR + '?apiKey=' + ETHPLORER_KEY,
-        { timeout: 10000 }
-      );
-      const px = parseFloat(data && data.price && data.price.rate) || _currentPx;
-      if (px) _priceMap.set(new Date().toISOString().slice(0, 10), px);
-    } catch (e2) { console.warn('[IXS] Ethplorer fallback failed:', e2.message); }
+      const { data } = await axios.get(url, { timeout: 15000, headers: { 'Accept': 'application/json', 'x-cg-pro-api-key': CG_KEY } });
+      if (data && data.prices && data.prices.length > 1) {
+        for (const [ts, px] of data.prices)
+          _priceMap.set(new Date(ts).toISOString().slice(0, 10), px);
+        console.log('[IXS] Price map loaded:', _priceMap.size, 'days from', url.slice(0,50));
+        break;
+      }
+    } catch (e) { console.warn('[IXS] CG attempt failed:', e.message); }
   }
   if (_priceMap.size === 0 && _currentPx) {
     _priceMap.set(new Date().toISOString().slice(0, 10), _currentPx);
+    console.warn('[IXS] Using only current price as fallback');
   }
   _priceAt = Date.now();
-  console.log('[IXS] Price map final size:', _priceMap.size, 'days');
   return _priceMap;
 }
 
