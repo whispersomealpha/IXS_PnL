@@ -30,26 +30,51 @@ let cache = {
 // ── PRICE HELPERS ─────────────────────────────────────────────
 let _priceMap = null, _priceAt = 0, _currentPx = null;
 
-async function getPriceMap() {
-  if (_priceMap && Date.now() - _priceAt < 3_600_000) return _priceMap;
-  const { data } = await axios.get(
-    'https://api.coingecko.com/api/v3/coins/ix-swap/market_chart?vs_currency=usd&days=max&interval=daily',
-    { timeout: 30000 }
-  );
-  _priceMap = new Map();
-  for (const [ts, px] of data.prices)
-    _priceMap.set(new Date(ts).toISOString().slice(0, 10), px);
-  _priceAt = Date.now();
-  return _priceMap;
-}
-
 async function getCurrentPrice() {
+  try {
+    const { data } = await axios.get(
+      'https://api.dexscreener.com/latest/dex/tokens/' + TOKEN_ADDR,
+      { timeout: 10000 }
+    );
+    const pair = data && data.pairs && data.pairs.find(p => p.chainId === 'ethereum');
+    if (pair && pair.priceUsd) {
+      _currentPx = parseFloat(pair.priceUsd);
+      return _currentPx;
+    }
+  } catch (e) { console.warn('[IXS] DexScreener error:', e.message); }
   const { data } = await axios.get(
-    'https://api.coingecko.com/api/v3/simple/price?ids=ix-swap&vs_currencies=usd',
+    'https://api.ethplorer.io/getTokenInfo/' + TOKEN_ADDR + '?apiKey=' + ETHPLORER_KEY,
     { timeout: 10000 }
   );
-  _currentPx = data?.['ix-swap']?.usd || 0;
+  _currentPx = parseFloat(data && data.price && data.price.rate) || 0;
   return _currentPx;
+}
+
+async function getPriceMap() {
+  if (_priceMap && Date.now() - _priceAt < 3_600_000) return _priceMap;
+  try {
+    const { data } = await axios.get(
+      'https://api.ethplorer.io/getTokenPriceHistoryGrouped/' + TOKEN_ADDR + '?apiKey=' + ETHPLORER_KEY + '&period=all',
+      { timeout: 30000 }
+    );
+    _priceMap = new Map();
+    const history = (data && data.history && data.history.countTxs) || [];
+    for (const entry of history) {
+      if (entry.ts && entry.open) {
+        const date = new Date(entry.ts * 1000).toISOString().slice(0, 10);
+        _priceMap.set(date, parseFloat(entry.open));
+      }
+    }
+  } catch (e) {
+    console.warn('[IXS] Price history error:', e.message);
+    _priceMap = new Map();
+  }
+  if (_priceMap.size === 0 && _currentPx) {
+    _priceMap.set(new Date().toISOString().slice(0, 10), _currentPx);
+  }
+  _priceAt = Date.now();
+  console.log('[IXS] Price map loaded:', _priceMap.size, 'days');
+  return _priceMap;
 }
 
 function priceAt(ts, map) {
