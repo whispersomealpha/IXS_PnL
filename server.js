@@ -57,8 +57,8 @@ async function getPriceMap() {
   // Try CoinGecko public endpoint (no key needed for this call)
   try {
     const { data } = await axios.get(
-      'https://api.coingecko.com/api/v3/coins/ix-swap/market_chart?vs_currency=usd&days=max&interval=daily',
-      { timeout: 30000, headers: { 'Accept': 'application/json', 'x-cg-demo-api-key': CG_KEY } }
+      'https://api.coingecko.com/api/v3/coins/ix-swap/market_chart?vs_currency=usd&days=365&interval=daily&x_cg_demo_api_key=' + CG_KEY,
+      { timeout: 30000, headers: { 'Accept': 'application/json', 'x-cg-demo-api-key': CG_KEY, 'x-cg-pro-api-key': CG_KEY } }
     );
     for (const [ts, px] of (data.prices || [])) {
       _priceMap.set(new Date(ts).toISOString().slice(0, 10), px);
