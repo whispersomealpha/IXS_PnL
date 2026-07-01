@@ -574,7 +574,7 @@ async function pollStatus(){
       const pct=s.progress.total>0?Math.round(s.progress.done/s.progress.total*100):0;
       $('prog').style.width=pct+'%';
       $('load-msg').textContent=s.progress.total>0
-        \`Analyzing wallets… \${s.progress.done}/\${s.progress.total} (\${pct}%)\`
+        ?'Analyzing wallets '+s.progress.done+'/'+s.progress.total+' ('+pct+'%)'
         :'Fetching data…';
       setTimeout(pollStatus,2000); return;
     }
